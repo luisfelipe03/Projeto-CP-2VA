@@ -7,7 +7,7 @@ import random
 from PIL import Image
 
 # Constantes
-MAZE_SIZE = 14
+MAZE_SIZE = 10
 PLAYER_RADIUS = 0.2
 SCREEN_WIDTH = 1080
 SCREEN_HEIGHT = 720
@@ -18,6 +18,7 @@ class Maze:
     def __init__(self, size):
         self.size = size
         self.grid = self.generate_maze()
+        self.portal_pos = self.find_valid_portal_position()  # Encontra uma posição válida para o portal
 
     def generate_maze(self):
         maze = np.ones((self.size, self.size), dtype=int)
@@ -38,6 +39,14 @@ class Maze:
                 stack.pop()
 
         return maze
+
+    def find_valid_portal_position(self):
+        """Encontra uma posição válida para o portal (onde não há parede)."""
+        for x in range(self.size - 1, 0, -1):
+            for z in range(self.size - 1, 0, -1):
+                if self.grid[x][z] == 0:  # Verifica se é um caminho válido
+                    return (x, z)
+        return (1, 1)  # Fallback: posição inicial
 
     def draw(self, wall_texture):
         glBindTexture(GL_TEXTURE_2D, wall_texture)
@@ -67,6 +76,20 @@ class Maze:
                 glVertex3fv(vertices[vertex])
         glEnd()
 
+    def draw_portal(self, portal_texture):
+        x, z = self.portal_pos
+        glBindTexture(GL_TEXTURE_2D, portal_texture)
+        glBegin(GL_QUADS)
+        glTexCoord2f(0, 0)
+        glVertex3f(x, 0, z)
+        glTexCoord2f(1, 0)
+        glVertex3f(x + 1, 0, z)
+        glTexCoord2f(1, 1)
+        glVertex3f(x + 1, 1, z)
+        glTexCoord2f(0, 1)
+        glVertex3f(x, 1, z)
+        glEnd()
+
 class Camera:
     def __init__(self, maze):
         self.x, self.y, self.z = 1.5, 0.5, 1.5
@@ -75,7 +98,7 @@ class Camera:
 
     def can_move(self, new_x, new_z):
         maze_x, maze_z = int(new_x), int(new_z)
-        if len(self.maze.grid) > maze_x >= 0 == self.maze.grid[maze_x][maze_z] and 0 <= maze_z < len(self.maze.grid[0]):
+        if 0 <= maze_x < len(self.maze.grid) and 0 <= maze_z < len(self.maze.grid[0]) and self.maze.grid[maze_x][maze_z] == 0:
             for dx in [-PLAYER_RADIUS, PLAYER_RADIUS]:
                 for dz in [-PLAYER_RADIUS, PLAYER_RADIUS]:
                     check_x, check_z = new_x + dx, new_z + dz
@@ -99,6 +122,11 @@ class Camera:
         gluLookAt(self.x, self.y, self.z,
                   self.x + np.cos(np.radians(self.angle_yaw)), self.y, self.z + np.sin(np.radians(self.angle_yaw)),
                   0, 1, 0)
+
+    def check_portal_collision(self, portal_pos):
+        portal_x, portal_z = portal_pos
+        distance = np.sqrt((self.x - portal_x) ** 2 + (self.z - portal_z) ** 2)
+        return distance < 0.5  # Colisão se estiver próximo o suficiente
 
 def load_texture(filename):
     img = Image.open(filename)
@@ -155,6 +183,7 @@ def main():
 
     floor_texture = load_texture("chao.jpg")
     wall_texture = load_texture("parede.jpg")
+    portal_texture = load_texture("pngtree-rusty-open-door-isolated.png")
 
     running = True
     while running:
@@ -174,6 +203,12 @@ def main():
         camera.apply()
         draw_floor(floor_texture)
         maze.draw(wall_texture)
+        maze.draw_portal(portal_texture)
+
+        # Verifica colisão com o portal
+        if camera.check_portal_collision(maze.portal_pos):
+            print("Você encontrou o portal! Parabéns!")
+            running = False
 
         pygame.display.flip()
         clock.tick(60)
