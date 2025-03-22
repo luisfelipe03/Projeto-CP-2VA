@@ -75,7 +75,7 @@ class Camera:
 
     def can_move(self, new_x, new_z):
         maze_x, maze_z = int(new_x), int(new_z)
-        if 0 <= maze_x < len(self.maze.grid) and 0 <= maze_z < len(self.maze.grid[0]) and self.maze.grid[maze_x][maze_z] == 0:
+        if len(self.maze.grid) > maze_x >= 0 == self.maze.grid[maze_x][maze_z] and 0 <= maze_z < len(self.maze.grid[0]):
             for dx in [-PLAYER_RADIUS, PLAYER_RADIUS]:
                 for dz in [-PLAYER_RADIUS, PLAYER_RADIUS]:
                     check_x, check_z = new_x + dx, new_z + dz
@@ -102,7 +102,6 @@ class Camera:
 
 def load_texture(filename):
     img = Image.open(filename)
-    img = img.transpose(Image.FLIP_TOP_BOTTOM)
     img_data = np.array(img.convert("RGB"), dtype=np.uint8)
     texture_id = glGenTextures(1)
 
