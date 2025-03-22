@@ -7,7 +7,7 @@ import random
 from PIL import Image
 
 # Constantes
-MAZE_SIZE = 10
+MAZE_SIZE = 14
 PLAYER_RADIUS = 0.2
 SCREEN_WIDTH = 1080
 SCREEN_HEIGHT = 720
@@ -129,16 +129,24 @@ class Camera:
         return distance < 0.5  # Colisão se estiver próximo o suficiente
 
 def load_texture(filename):
-    img = Image.open(filename)
-    img_data = np.array(img.convert("RGB"), dtype=np.uint8)
-    texture_id = glGenTextures(1)
+    img = Image.open(filename).convert("RGBA")  # Usa RGBA para garantir canal alpha
+    img = img.transpose(Image.Transpose.FLIP_TOP_BOTTOM)  # Corrige a inversão
 
+    img_data = np.array(img, dtype=np.uint8)  # Converte para array numpy
+
+    texture_id = glGenTextures(1)
     glBindTexture(GL_TEXTURE_2D, texture_id)
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.width, img.height, 0, GL_RGB, GL_UNSIGNED_BYTE, img_data)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)  # Evita distorções
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.width, img.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, img_data)
 
     return texture_id
+
+
 
 def setup_opengl():
     glEnable(GL_DEPTH_TEST)
@@ -183,7 +191,7 @@ def main():
 
     floor_texture = load_texture("chao.jpg")
     wall_texture = load_texture("parede.jpg")
-    portal_texture = load_texture("pngtree-rusty-open-door-isolated.png")
+    portal_texture = load_texture("portal.jpg")
 
     running = True
     while running:
