@@ -7,7 +7,7 @@ import random
 from PIL import Image
 
 # Constantes
-MAZE_SIZE = 14
+MAZE_SIZE = 5
 PLAYER_RADIUS = 0.2
 SCREEN_WIDTH = 1080
 SCREEN_HEIGHT = 720
@@ -146,8 +146,6 @@ def load_texture(filename):
 
     return texture_id
 
-
-
 def setup_opengl():
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_TEXTURE_2D)
@@ -178,12 +176,65 @@ def handle_events(camera):
             camera.rotate(x * MOUSE_SENSITIVITY)
     return True
 
+def show_menu():
+    pygame.init()
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    font = pygame.font.Font(None, 74)
+    title_text = font.render("Labirinto Mágico", True, (255, 255, 255))
+    start_text = pygame.font.Font(None, 50).render("Pressione ESPAÇO para começar", True, (255, 255, 255))
+
+    while True:
+        screen.fill((0, 0, 0))
+        screen.blit(title_text, (SCREEN_WIDTH // 2 - 200, SCREEN_HEIGHT // 2 - 100))
+        screen.blit(start_text, (SCREEN_WIDTH // 2 - 250, SCREEN_HEIGHT // 2 + 50))
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                exit()  # Fecha o jogo corretamente
+            if event.type == KEYDOWN and event.key == K_SPACE:
+                return  # Sai do menu e começa o jogo
+
+
+def show_win_screen():
+    pygame.init()
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    font = pygame.font.Font(None, 74)
+    win_text = font.render("Você encontrou o portal! Parabéns!", True, (255, 255, 255))
+    restart_text = pygame.font.Font(None, 50).render("Pressione R para reiniciar ou ESC para sair", True, (255, 255, 255))
+
+    while True:
+        screen.fill((0, 0, 0))
+        screen.blit(win_text, (SCREEN_WIDTH // 2 - 300, SCREEN_HEIGHT // 2 - 50))
+        screen.blit(restart_text, (SCREEN_WIDTH // 2 - 300, SCREEN_HEIGHT // 2 + 50))
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                exit()
+            if event.type == KEYDOWN:
+                if event.key == K_r:
+                    return True  # Indica que o jogo deve reiniciar
+                if event.key == K_ESCAPE:
+                    return False  # Indica que o jogo deve fechar
+
+
+
 def main():
     pygame.init()
+
+    show_menu()  # Mostra o menu antes de iniciar
+
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), DOUBLEBUF | OPENGL)
     pygame.mouse.set_visible(False)
     pygame.event.set_grab(True)
     clock = pygame.time.Clock()
+
+    pygame.mixer.init()
+    step_sound = pygame.mixer.Sound("step.wav")
+    portal_sound = pygame.mixer.Sound("win.wav")
 
     setup_opengl()
     maze = Maze(MAZE_SIZE)
@@ -199,13 +250,21 @@ def main():
 
         keys = pygame.key.get_pressed()
         if keys[K_w]:
-            camera.move(PLAYER_SPEED * np.cos(np.radians(camera.angle_yaw)), PLAYER_SPEED * np.sin(np.radians(camera.angle_yaw)))
+            camera.move(PLAYER_SPEED * np.cos(np.radians(camera.angle_yaw)),
+                        PLAYER_SPEED * np.sin(np.radians(camera.angle_yaw)))
+            step_sound.play()
         if keys[K_s]:
-            camera.move(-PLAYER_SPEED * np.cos(np.radians(camera.angle_yaw)), -PLAYER_SPEED * np.sin(np.radians(camera.angle_yaw)))
+            camera.move(-PLAYER_SPEED * np.cos(np.radians(camera.angle_yaw)),
+                        -PLAYER_SPEED * np.sin(np.radians(camera.angle_yaw)))
+            step_sound.play()
         if keys[K_a]:
-            camera.move(PLAYER_SPEED * np.sin(np.radians(camera.angle_yaw)), -PLAYER_SPEED * np.cos(np.radians(camera.angle_yaw)))
+            camera.move(PLAYER_SPEED * np.sin(np.radians(camera.angle_yaw)),
+                        -PLAYER_SPEED * np.cos(np.radians(camera.angle_yaw)))
+            step_sound.play()
         if keys[K_d]:
-            camera.move(-PLAYER_SPEED * np.sin(np.radians(camera.angle_yaw)), PLAYER_SPEED * np.cos(np.radians(camera.angle_yaw)))
+            camera.move(-PLAYER_SPEED * np.sin(np.radians(camera.angle_yaw)),
+                        PLAYER_SPEED * np.cos(np.radians(camera.angle_yaw)))
+            step_sound.play()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         camera.apply()
@@ -215,14 +274,18 @@ def main():
 
         # Verifica colisão com o portal
         if camera.check_portal_collision(maze.portal_pos):
-            print("Você encontrou o portal! Parabéns!")
-            running = False
+            portal_sound.play()
+            if show_win_screen():  # Agora retorna True se o jogador quiser reiniciar
+                return main()  # Reinicia o jogo
+            else:
+                running = False  # Sai do jogo
 
         pygame.display.flip()
         clock.tick(60)
         pygame.mouse.set_pos((SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
 
     pygame.quit()
+
 
 if __name__ == "__main__":
     main()
