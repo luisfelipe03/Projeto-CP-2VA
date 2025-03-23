@@ -7,12 +7,12 @@ import random
 from PIL import Image
 
 # Constantes
-MAZE_SIZE = 5
+MAZE_SIZE = 14
 PLAYER_RADIUS = 0.2
 SCREEN_WIDTH = 1080
 SCREEN_HEIGHT = 720
 MOUSE_SENSITIVITY = 0.12
-PLAYER_SPEED = 0.13
+PLAYER_SPEED = 0.1
 
 class Maze:
     def __init__(self, size):
@@ -180,7 +180,7 @@ def show_menu():
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     font = pygame.font.Font(None, 74)
-    title_text = font.render("Labirinto Mágico", True, (255, 255, 255))
+    title_text = font.render("Jogo do Labirinto", True, (255, 255, 255))
     start_text = pygame.font.Font(None, 50).render("Pressione ESPAÇO para começar", True, (255, 255, 255))
 
     while True:
@@ -233,7 +233,6 @@ def main():
     clock = pygame.time.Clock()
 
     pygame.mixer.init()
-    step_sound = pygame.mixer.Sound("step.wav")
     portal_sound = pygame.mixer.Sound("win.wav")
 
     setup_opengl()
@@ -252,19 +251,15 @@ def main():
         if keys[K_w]:
             camera.move(PLAYER_SPEED * np.cos(np.radians(camera.angle_yaw)),
                         PLAYER_SPEED * np.sin(np.radians(camera.angle_yaw)))
-            step_sound.play()
         if keys[K_s]:
             camera.move(-PLAYER_SPEED * np.cos(np.radians(camera.angle_yaw)),
                         -PLAYER_SPEED * np.sin(np.radians(camera.angle_yaw)))
-            step_sound.play()
         if keys[K_a]:
             camera.move(PLAYER_SPEED * np.sin(np.radians(camera.angle_yaw)),
                         -PLAYER_SPEED * np.cos(np.radians(camera.angle_yaw)))
-            step_sound.play()
         if keys[K_d]:
             camera.move(-PLAYER_SPEED * np.sin(np.radians(camera.angle_yaw)),
                         PLAYER_SPEED * np.cos(np.radians(camera.angle_yaw)))
-            step_sound.play()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         camera.apply()
