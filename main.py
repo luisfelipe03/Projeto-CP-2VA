@@ -13,6 +13,7 @@ SCREEN_WIDTH = 1080
 SCREEN_HEIGHT = 720
 MOUSE_SENSITIVITY = 0.12
 PLAYER_SPEED = 0.1
+GAME_TIME_LIMIT = 60
 
 class Maze:
     def __init__(self, size):
@@ -222,6 +223,30 @@ def show_win_screen():
 
 
 
+def show_game_over_screen():
+    pygame.init()
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    font = pygame.font.Font(None, 74)
+    game_over_text = font.render("Tempo esgotado! Você perdeu!", True, (255, 255, 255))
+    restart_text = pygame.font.Font(None, 50).render("Pressione R para reiniciar ou ESC para sair", True, (255, 255, 255))
+
+    while True:
+        screen.fill((0, 0, 0))
+        screen.blit(game_over_text, (SCREEN_WIDTH // 2 - 300, SCREEN_HEIGHT // 2 - 50))
+        screen.blit(restart_text, (SCREEN_WIDTH // 2 - 300, SCREEN_HEIGHT // 2 + 50))
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                exit()
+            if event.type == KEYDOWN:
+                if event.key == K_r:
+                    return True  # Reinicia o jogo
+                if event.key == K_ESCAPE:
+                    return False  # Sai do jogo
+
+
 def main():
     pygame.init()
 
@@ -243,9 +268,19 @@ def main():
     wall_texture = load_texture("parede.jpg")
     portal_texture = load_texture("portal.jpg")
 
+    start_time = pygame.time.get_ticks()  # Marca o tempo inicial
+
     running = True
     while running:
         running = handle_events(camera)
+
+        # Verifica o tempo decorrido
+        elapsed_time = (pygame.time.get_ticks() - start_time) // 1000  # Tempo em segundos
+        if elapsed_time >= GAME_TIME_LIMIT:
+            if show_game_over_screen():  # Exibe a tela de Game Over
+                return main()  # Reinicia o jogo
+            else:
+                running = False  # Sai do jogo
 
         keys = pygame.key.get_pressed()
         if keys[K_w]:
@@ -280,6 +315,7 @@ def main():
         pygame.mouse.set_pos((SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
 
     pygame.quit()
+
 
 
 if __name__ == "__main__":
